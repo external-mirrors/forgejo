@@ -25,11 +25,15 @@ COMMA := ,
 DIFF ?= diff --unified
 
 ifeq ($(USE_GOTESTSUM), yes)
-	GOTEST ?= gotestsum --format testname
-	GOTESTFLAGS ?= -test.timeout=2h
+	GOTEST ?= gotestsum --format testname --
+	GOTESTFLAGS ?= -timeout=2h
 else
 	GOTEST ?= $(GO) test
-	GOTESTFLAGS ?= -timeout=2h -v
+	GOTESTFLAGS ?= -timeout=2h
+endif
+
+ifneq ($(CI), true)
+	GOTESTFLAGS += -v
 endif
 
 XGO_VERSION := go-1.21.x
@@ -680,11 +684,11 @@ generate-ini-sqlite:
 
 .PHONY: test-sqlite
 test-sqlite: git-check $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/integration -tags '$(TEST_TAGS)' $(GOTESTFLAGS)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -tags '$(TEST_TAGS)'
 
 .PHONY: test-sqlite\#%
 test-sqlite\#%: git-check $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.run $(subst .,/,$*)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -tags '$(TEST_TAGS)' -test.run $(subst .,/,$*)
 
 .PHONY: test-sqlite-migration
 test-sqlite-migration: migrations.sqlite.test migrations.individual.sqlite.test
@@ -703,11 +707,11 @@ generate-ini-mysql:
 
 .PHONY: test-mysql
 test-mysql: git-check $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration
 
 .PHONY: test-mysql\#%
 test-mysql\#%: git-check $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -test.run $(subst .,/,$*)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -test.run $(subst .,/,$*)
 
 .PHONY: test-mysql-migration
 test-mysql-migration: migrations.mysql.test migrations.individual.mysql.test
@@ -729,11 +733,11 @@ generate-ini-pgsql:
 
 .PHONY: test-pgsql
 test-pgsql: git-check $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration
 
 .PHONY: test-pgsql\#%
 test-pgsql\#%: git-check $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -test.run $(subst .,/,$*)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -test.run $(subst .,/,$*)
 
 .PHONY: test-pgsql-migration
 test-pgsql-migration: migrations.pgsql.test migrations.individual.pgsql.test
@@ -752,59 +756,59 @@ test-e2e: test-e2e-sqlite
 
 .PHONY: test-e2e-sqlite
 test-e2e-sqlite: playwright $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.run TestE2e
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -tags '$(TEST_TAGS)' -test.run TestE2e
 
 .PHONY: test-e2e-sqlite\#%
 test-e2e-sqlite\#%: playwright $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.run TestE2e/$*
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -tags '$(TEST_TAGS)' -test.run TestE2e/$*
 
 .PHONY: test-e2e-sqlite-firefox\#%
 test-e2e-sqlite-firefox\#%: playwright $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini PLAYWRIGHT_PROJECT=firefox $(GOTEST) forgejo.org/tests/e2e  $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.run TestE2e/$*
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini PLAYWRIGHT_PROJECT=firefox $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -tags '$(TEST_TAGS)' -test.run TestE2e/$*
 
 .PHONY: test-e2e-mysql
 test-e2e-mysql: playwright $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -test.run TestE2e
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -test.run TestE2e
 
 .PHONY: test-e2e-mysql\#%
 test-e2e-mysql\#%: playwright $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -test.run TestE2e/$*
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -test.run TestE2e/$*
 
 .PHONY: test-e2e-pgsql
 PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.initest-e2e-pgsql: playwright $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -test.run TestE2e
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -test.run TestE2e
 
 .PHONY: test-e2e-pgsql\#%
 test-e2e-pgsql\#%: playwright $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -test.run TestE2e/$*
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -test.run TestE2e/$*
 
 .PHONY: test-e2e-debugserver
 test-e2e-debugserver: $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/e2e $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.run TestDebugserver
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/e2e -tags '$(TEST_TAGS)' -test.run TestDebugserver
 
 .PHONY: bench-sqlite
 bench-sqlite: git-check $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -tags '$(TEST_TAGS)' -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -tags '$(TEST_TAGS)' -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
 
 .PHONY: bench-mysql
 bench-mysql: git-check $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
 
 .PHONY: bench-pgsql
 bench-pgsql: git-check $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/integration $(GOTESTFLAGS) -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration -test.cpuprofile=cpu.out -test.run DontRunTests -test.bench .
 
 .PHONY: migrations.mysql.test
 migrations.mysql.test: $(GO_SOURCES) generate-ini-mysql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) forgejo.org/tests/integration/migration-test $(GOTESTFLAGS)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration/migration-test
 
 .PHONY: migrations.pgsql.test
 migrations.pgsql.test: $(GO_SOURCES) generate-ini-pgsql
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) forgejo.org/tests/integration/migration-test $(GOTESTFLAGS)
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration/migration-test
 
 .PHONY: migrations.sqlite.test
 migrations.sqlite.test: $(GO_SOURCES) generate-ini-sqlite
-	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) forgejo.org/tests/integration/migration-test $(GOTESTFLAGS) -tags '$(TEST_TAGS)'
+	PROJECT_ROOT="$(CURDIR)" PROJECT_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) forgejo.org/tests/integration/migration-test -tags '$(TEST_TAGS)'
 
 .PHONY: migrations.individual.mysql.test
 migrations.individual.mysql.test: $(GO_SOURCES) | compute-migration-packages
